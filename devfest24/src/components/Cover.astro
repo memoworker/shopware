@@ -1,0 +1,84 @@
+<div class="cover">
+    <div class="container xl:min-h-screen grid min-h-80 grid-cols-1 lg:grid-cols-2 pt-20 xl:pt-0">
+        <div class="cover-left flex flex-col justify-center items-center">
+            <div class="flex items-center flex-row">
+                <img class="devfest-logo md:h-16 h-12" src="image/devfest24.svg" />
+                <h1 class="font-bold xl:text-6xl lg:text-5xl text-4xl ml-4">DevFest '24</h1>
+            </div>
+    
+            <div class="flex flex-row items-center mt-4">
+                <img class="md:h-32 h-24 curly-brace-icon" src="icon/curlyBraceLeft.png" />
+                <h1 class="font-bold xl:text-6xl lg:text-5xl text-4xl">Cloud Da Nang</h1>
+                <img class="md:h-32 h-24 curly-brace-icon" src="icon/curlyBraceRight.png" />
+            </div>
+    
+            <a 
+                class="btn-primary btn-register mt-8"
+                href="https://tinyurl.com/devfestclouddn24"
+                target="_blank"
+            >
+                <span class="front">Register now</span>
+            </a>
+        </div>
+    
+        <div class="cover-right flex justify-center items-center">
+            <div class="command-window box-frame">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="21" viewBox="0 0 54 14" data-astro-cid-jgrilnmn=""> <g fill="none" fill-rule="evenodd" transform="translate(1 1)" data-astro-cid-jgrilnmn=""> <circle cx="6" cy="6" r="6" fill="#FF8B8B" stroke="#FA7C7C" stroke-width=".5" data-astro-cid-jgrilnmn=""></circle> <circle cx="26" cy="6" r="6" fill="#F0CF61" stroke="#EBC64C" stroke-width=".5" data-astro-cid-jgrilnmn=""></circle> <circle cx="46" cy="6" r="6" fill="#61BFAD" stroke="#46AE9A" stroke-width=".5" data-astro-cid-jgrilnmn=""></circle> </g> </svg>
+                <img class="dragon-logo mb-8 h-36" src="image/dragon.png" />
+                
+                <code class="text-md leading-relaxed">
+                    &#123;
+                    <div class="pl-8">
+                        <span class="text-blue">"dateTime"</span>: <span class="text-green">"Nov 23, 2024, 13:30 - 17:30"</span>,<br>
+                        <span class="text-blue">"location"</span>: <span class="text-green">"To be defined"</span>,<br>
+                        <span class="text-blue">"description"</span>: <span class="text-green">"Join us for an eventful day of geek talks."</span>
+                    </div>
+                    &#125;
+                </code>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cover {
+		background: #ffe7a5;
+	}
+
+	.cover-right {
+		padding: 1rem;
+		position: relative;
+	}
+
+	.btn-register {
+		font-size: 1.5rem;
+		text-decoration: none;
+		width: fit-content;
+		background: black;
+	}
+
+  	.front {
+    	display: block;
+		border: 2px solid black;
+		border-radius: 40px;
+		padding: 10px 20px;
+		background: #c3ecf6;
+		width: 100%;
+    	transform: translateY(-8px);
+  	}
+
+  	.btn-register:hover .front {
+    	transform: translateY(-2px);
+  	}
+
+	.command {
+		padding: 2rem;
+	}
+
+	.command-window {
+		padding: 1rem;
+		width: 86%;
+		height: fit-content;
+		background: white;
+	}
+</style>
