@@ -20,28 +20,31 @@ function mockApiCall(type) {
                 },
             ];
         case 'newsletter_recipient':
-            return [
-                {
-                    email: 'test@example.com',
-                    title: null,
-                    firstName: 'Max',
-                    lastName: 'Mustermann',
-                    zipCode: '48624',
-                    city: 'Schöppingen',
-                    street: null,
-                    status: 'direct',
-                    hash: 'c225f2cc023946679c4e0d9189375402',
-                    confirmedAt: null,
-                    salutationId: 'fd04f0ca555143ab9f28294699f7384b',
-                    languageId: '2fbb5fe2e29a4d70aa5854ce7ce3e20b',
-                    salesChannelId: '7b872c384b254613b5a4bd5c8b965bab',
-                    createdAt: '2020-09-23T11:42:12.104+00:00',
-                    updatedAt: '2020-09-23T13:27:01.436+00:00',
-                    apiAlias: null,
-                    id: '92618290af63445b973cc1021d60e3f5',
-                    salesChannel: {},
-                },
-            ];
+            return {
+                data: [
+                    {
+                        email: 'test@example.com',
+                        title: null,
+                        firstName: 'Max',
+                        lastName: 'Mustermann',
+                        zipCode: '48624',
+                        city: 'Schöppingen',
+                        street: null,
+                        status: 'direct',
+                        hash: 'c225f2cc023946679c4e0d9189375402',
+                        confirmedAt: null,
+                        salutationId: 'fd04f0ca555143ab9f28294699f7384b',
+                        languageId: '2fbb5fe2e29a4d70aa5854ce7ce3e20b',
+                        salesChannelId: '7b872c384b254613b5a4bd5c8b965bab',
+                        createdAt: '2020-09-23T11:42:12.104+00:00',
+                        updatedAt: '2020-09-23T13:27:01.436+00:00',
+                        apiAlias: null,
+                        id: '92618290af63445b973cc1021d60e3f5',
+                        salesChannel: {},
+                    },
+                ],
+                total: 1,
+            };
 
         case 'sales_channel':
             return [
@@ -89,9 +92,6 @@ async function createWrapper() {
                 },
                 'sw-data-grid': await wrapTestComponent('sw-data-grid'),
                 'sw-context-menu-item': await wrapTestComponent('sw-context-menu-item'),
-                'sw-empty-state': {
-                    template: '<div class="sw-empty-state"></div>',
-                },
                 'sw-entity-listing': {
                     props: [
                         'items',
@@ -169,11 +169,20 @@ async function createWrapper() {
                     },
                 },
             },
+            mocks: {
+                $route: {
+                    meta: {
+                        $module: {
+                            icon: 'solid-content',
+                        },
+                    },
+                },
+            },
         },
     });
 }
 
-describe('src/module/sw-manufacturer/page/sw-manufacturer-list', () => {
+describe('src/module/sw-newsletter-recipient/page/sw-newsletter-recipient-list', () => {
     beforeEach(() => {
         global.activeAclRoles = [];
     });
@@ -301,11 +310,9 @@ describe('src/module/sw-manufacturer/page/sw-manufacturer-list', () => {
         });
         await wrapper.vm.getList();
 
-        const emptyState = wrapper.find('.sw-empty-state');
-
         expect(wrapper.vm.searchRankingService.getSearchFieldsByEntity).toHaveBeenCalledTimes(1);
-        expect(emptyState.exists()).toBeTruthy();
-        expect(emptyState.attributes().title).toBe('sw-empty-state.messageNoResultTitle');
+        expect(wrapper.find('.mt-empty-state').exists()).toBeTruthy();
+        expect(wrapper.find('.mt-empty-state__headline').text()).toBe('sw-empty-state.messageNoResultTitle');
         expect(wrapper.find('sw-entity-listing-stub').exists()).toBeFalsy();
         expect(wrapper.vm.entitySearchable).toBe(false);
 

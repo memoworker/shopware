@@ -70,7 +70,6 @@ async function createWrapper() {
                 'sw-context-menu-item': true,
                 'sw-pagination': true,
                 'sw-data-grid-settings': true,
-                'sw-empty-state': true,
                 'router-link': {
                     template: '<a><slot></slot></a>',
                 },
@@ -112,7 +111,13 @@ async function createWrapper() {
                 },
             },
             mocks: {
-                $route: { query: '' },
+                $route: {
+                    meta: {
+                        $module: {
+                            icon: 'solid-content',
+                        },
+                    },
+                },
             },
         },
     });
@@ -162,6 +167,7 @@ describe('src/module/sw-order/page/sw-order-list', () => {
                     ...mockItem,
                 },
             ],
+            total: 2,
         });
 
         const firstRow = wrapper.find('.sw-data-grid__row--0');
@@ -191,6 +197,7 @@ describe('src/module/sw-order/page/sw-order-list', () => {
                     orderCustomer: null,
                 },
             ],
+            total: 2,
         });
 
         const firstRow = wrapper.find('.sw-data-grid__row--0');
@@ -287,11 +294,9 @@ describe('src/module/sw-order/page/sw-order-list', () => {
         });
         await wrapper.vm.getList();
 
-        const emptyState = wrapper.find('sw-empty-state-stub');
-
         expect(wrapper.vm.searchRankingService.getSearchFieldsByEntity).toHaveBeenCalledTimes(1);
-        expect(emptyState.exists()).toBeTruthy();
-        expect(emptyState.attributes().title).toBe('sw-empty-state.messageNoResultTitle');
+        expect(wrapper.find('.mt-empty-state')).toBeTruthy();
+        expect(wrapper.find('.mt-empty-state__headline').text()).toBe('sw-empty-state.messageNoResultTitle');
         expect(wrapper.find('sw-entity-listing-stub').exists()).toBeFalsy();
         expect(wrapper.vm.entitySearchable).toBe(false);
 
@@ -335,6 +340,7 @@ describe('src/module/sw-order/page/sw-order-list', () => {
                     ...mockItem,
                 },
             ],
+            total: 2,
         });
 
         const firstRow = wrapper.findAll('.sw-data-grid__cell .sw-data-grid__cell-content');
@@ -344,6 +350,9 @@ describe('src/module/sw-order/page/sw-order-list', () => {
     it('should push to a new route when editing items', async () => {
         global.activeAclRoles = [];
         wrapper = await createWrapper();
+        await wrapper.setData({
+            total: 2,
+        });
         wrapper.vm.$router.push = jest.fn();
         wrapper.vm.$refs.orderGrid.selection = { foo: { deliveries: [] } };
         await wrapper.vm.onBulkEditItems();

@@ -79,6 +79,7 @@ describe('module/sw-review/page/sw-review-list', () => {
 
     it('should not be able to delete', async () => {
         const wrapper = await createWrapper();
+        await wrapper.setData({ total: 2 });
         await wrapper.vm.$nextTick();
 
         const deleteMenuItem = wrapper.find('sw-entity-listing-stub');
@@ -89,7 +90,7 @@ describe('module/sw-review/page/sw-review-list', () => {
         global.activeAclRoles = ['review.deleter'];
 
         const wrapper = await createWrapper();
-        await wrapper.vm.$nextTick();
+        await wrapper.setData({ total: 2 });
 
         const deleteMenuItem = wrapper.find('sw-entity-listing-stub');
         expect(deleteMenuItem.attributes()['allow-delete']).toBeTruthy();
@@ -97,7 +98,7 @@ describe('module/sw-review/page/sw-review-list', () => {
 
     it('should not be able to edit', async () => {
         const wrapper = await createWrapper();
-        await wrapper.vm.$nextTick();
+        await wrapper.setData({ total: 2 });
 
         const editMenuItem = wrapper.find('sw-entity-listing-stub');
         expect(editMenuItem.attributes()['allow-edit']).toBeFalsy();
@@ -107,7 +108,7 @@ describe('module/sw-review/page/sw-review-list', () => {
         global.activeAclRoles = ['review.editor'];
 
         const wrapper = await createWrapper();
-        await wrapper.vm.$nextTick();
+        await wrapper.setData({ total: 2 });
 
         const editMenuItem = wrapper.find('sw-entity-listing-stub');
         expect(editMenuItem.attributes()['allow-edit']).toBeTruthy();
