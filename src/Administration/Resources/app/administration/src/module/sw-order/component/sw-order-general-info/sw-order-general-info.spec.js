@@ -154,6 +154,7 @@ describe('src/module/sw-order/component/sw-order-general-info', () => {
     let wrapper;
 
     beforeAll(() => {
+        global.activeAclRoles = ['order.editor'];
         setActivePinia(createPinia());
     });
 
@@ -216,5 +217,25 @@ describe('src/module/sw-order/component/sw-order-general-info', () => {
         wrapper.vm.$options.watch['order.id'].call(wrapper.vm);
 
         expect(spyCreatedComponent).toHaveBeenCalledTimes(1);
+    });
+
+    it('should disable state selects on loading', async () => {
+        const stateSelects = wrapper.findAll('.sw-order-general-info__order-state');
+        expect(stateSelects).toHaveLength(3);
+
+        wrapper.vm.onLeaveModalConfirm([], false);
+
+        expect(wrapper.vm.stateChangeInProgress).toBeTruthy();
+
+        Shopware.Store.get('swOrderDetail').savedSuccessful = true;
+        wrapper.vm.$options.watch.savedSuccessful.call(wrapper.vm, false, true);
+
+        expect(wrapper.vm.stateChangeInProgress).toBeFalsy();
+
+        stateSelects.forEach((select) => {
+            // get first child first
+            const selectStub = select.find('sw-order-state-select-v2-stub');
+            expect(selectStub.attributes('disabled')).toBe('false');
+        });
     });
 });
