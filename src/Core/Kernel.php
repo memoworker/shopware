@@ -368,7 +368,7 @@ PHP;
 
     private function addApiRoutes(RoutingConfigurator $routes): void
     {
-        $routes->import('.', 'api');
+        $routes->import('.', Framework\Routing\ApiRouteScope::ID);
     }
 
     private function addBundleRoutes(RoutingConfigurator $routes): void

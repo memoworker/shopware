@@ -27,7 +27,7 @@ class ApiRouteInfoResolver
     {
         $routes = [];
         foreach ($this->router->getRouteCollection()->all() as $route) {
-            $routeScope = $route->getDefaults()['_routeScope'] ?? [];
+            $routeScope = $route->getDefaults()[\Shopware\Core\PlatformRequest::ATTRIBUTE_ROUTE_SCOPE] ?? [];
             if (!\in_array($apiScope, $routeScope, true)) {
                 continue;
             }
