@@ -20,8 +20,6 @@ use Twig\Environment;
 #[Package('discovery')]
 class StoreApiInfoController
 {
-    private const API_SCOPE_STORE = 'store-api';
-
     /**
      * @internal
      *
@@ -107,7 +105,7 @@ class StoreApiInfoController
     public function getRoutes(): JsonResponse
     {
         $endpoints = array_map(
-            fn (RouteInfo $endpoint) => ['path' => $endpoint->path, 'methods' => $endpoint->methods],
+            static fn (RouteInfo $endpoint) => ['path' => $endpoint->path, 'methods' => $endpoint->methods],
             $this->apiRouteInfoResolver->getApiRoutes(StoreApiRouteScope::ID)
         );
 
