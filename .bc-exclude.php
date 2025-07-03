@@ -25,6 +25,7 @@ return [
 
         // Incorrectly deprecated
         'The return type of Shopware\\\\Core\\\\Checkout\\\\Document\\\\DocumentException.* changed from self',
+        'The return type of Shopware\\\\Core\\\\Content\\\\Product\\\\ProductException.* changed from self',
 
         // Expected to be appended when new event is added
         'Value of constant Shopware\\\\Core\\\\Framework\\\\Webhook\\\\Hookable',
