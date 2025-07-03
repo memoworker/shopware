@@ -50,5 +50,8 @@ return [
 
         // The type has been extended and the old type is still accepted
         'CHANGED: The parameter \$context of Shopware\\\\Core\\\\Framework\\\\Adapter\\\\Twig\\\\Extension\\\\BuildBreadcrumbExtension#(getFullBreadcrumb|getFullBreadcrumbById)\(\) changed from Shopware\\\\Core\\\\Framework\\\\Context to Shopware\\\\Core\\\\Framework\\\\Context\|Shopware\\\\Core\\\\System\\\\SalesChannel\\\\SalesChannelContext',
+
+        // Constant is not released yet
+        'CHANGED: Value of constant Shopware\\\\Core\\\\Content\\\\Product\\\\ProductException::PRODUCT_NOT_FOUND changed from \'PRODUCT_PRODUCT_NOT_FOUND\' to \'CONTENT__PRODUCT_NOT_FOUND\'',
     ],
 ];
