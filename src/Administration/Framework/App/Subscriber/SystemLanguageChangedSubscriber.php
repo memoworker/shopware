@@ -4,15 +4,15 @@ namespace Shopware\Administration\Framework\App\Subscriber;
 
 use Shopware\Administration\Snippet\AppAdministrationSnippetCollection;
 use Shopware\Administration\Snippet\AppAdministrationSnippetEntity;
-use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Maintenance\System\Service\SystemLanguageChangeEvent;
-use Shopware\Core\System\Language\LanguageCollection;
-use Shopware\Core\System\Language\LanguageEntity;
+use Shopware\Core\System\Locale\LocaleCollection;
 use Shopware\Core\System\Locale\LocaleEntity;
+use Shopware\Core\System\Locale\LocaleException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -22,11 +22,11 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 readonly class SystemLanguageChangedSubscriber implements EventSubscriberInterface
 {
     /**
-     * @param EntityRepository<LanguageCollection> $languageRepository
+     * @param EntityRepository<LocaleCollection> $localeRepository
      * @param EntityRepository<AppAdministrationSnippetCollection> $snippetRepository
      */
     public function __construct(
-        private EntityRepository $languageRepository,
+        private EntityRepository $localeRepository,
         private EntityRepository $snippetRepository,
     ) {
     }
@@ -49,12 +49,14 @@ readonly class SystemLanguageChangedSubscriber implements EventSubscriberInterfa
 
         $appsWithSnippets = array_values(array_unique($snippets->map(fn (AppAdministrationSnippetEntity $snippet) => $snippet->getAppId())));
 
-        $previousLocale = $this->getLocale($event->previousLanguageId, $context);
-        $newLocale = $this->getLocale(Defaults::LANGUAGE_SYSTEM, $context);
+        $previousLocale = $this->getLocale($event->previousLocaleCode, $context);
+        $newLocale = $this->getLocale($event->newLocaleCode, $context);
 
         foreach ($appsWithSnippets as $appId) {
             $snippetToClone = $snippets->filter(fn (AppAdministrationSnippetEntity $snippet) => $appId === $snippet->getAppId() && $snippet->getLocaleId() === $newLocale->getId())->first();
-            \assert($snippetToClone instanceof AppAdministrationSnippetEntity);
+            if (!$snippetToClone) {
+                continue;
+            }
 
             $snippetWithPreviousLocaleExists = $snippets->filter(fn (AppAdministrationSnippetEntity $snippet) => $appId === $snippet->getAppId() && $snippet->getLocaleId() === $previousLocale->getId())->first();
             if ($snippetWithPreviousLocaleExists) {
@@ -69,16 +71,15 @@ readonly class SystemLanguageChangedSubscriber implements EventSubscriberInterfa
         }
     }
 
-    private function getLocale(string $languageId, Context $context): LocaleEntity
+    private function getLocale(string $code, Context $context): LocaleEntity
     {
-        $criteria = new Criteria([$languageId]);
-        $criteria->addAssociation('locale');
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('code', $code));
 
-        $language = $this->languageRepository->search($criteria, $context)->first();
-        \assert($language instanceof LanguageEntity);
-
-        $locale = $language->getLocale();
-        \assert($locale instanceof LocaleEntity);
+        $locale = $this->localeRepository->search($criteria, $context)->first();
+        if (!$locale instanceof LocaleEntity) {
+            throw LocaleException::localeDoesNotExists($code);
+        }
 
         return $locale;
     }

@@ -1,8 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Shopware\Tests\Integration\Core\Framework\App\Subscriber;
+namespace Shopware\Tests\Integration\Administration\Framework\App\Subscriber;
 
 use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopware\Administration\Snippet\AppAdministrationSnippetCollection;
 use Shopware\Administration\Snippet\AppAdministrationSnippetEntity;
@@ -41,17 +42,14 @@ class SystemLanguageChangedSubscriberTest extends TestCase
 
     protected function setUp(): void
     {
-        if (!$snippetRepository = $this->getContainer()->get('app_administration_snippet.repository')) {
-            static::markTestSkipped('Service "app_administration_snippet.repository" is not available');
-        }
-
         $this->context = Context::createDefaultContext();
         $this->connection = $this->getContainer()->get(Connection::class);
         $this->appRepository = $this->getContainer()->get('app.repository');
-        $this->snippetRepository = $snippetRepository;
+        $this->snippetRepository = $this->getContainer()->get('app_administration_snippet.repository');
     }
 
-    public function testCreatesSnippetAfterSystemLanguageChangedToEnUs(): void
+    #[DataProvider('localeCodes')]
+    public function testCreatesSnippetAfterSystemLanguageChanged(string $localeCode): void
     {
         $previousSystemLocale = $this->getCurrentSystemLocale();
         static::assertSame('en-GB', $previousSystemLocale['code']);
@@ -66,17 +64,17 @@ class SystemLanguageChangedSubscriberTest extends TestCase
         self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appOne->getId(), $previousSystemLocale['id']);
         self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appThree->getId(), $previousSystemLocale['id']);
 
-        $this->getContainer()->get(ShopConfigurator::class)->setDefaultLanguage('en-US');
+        $this->getContainer()->get(ShopConfigurator::class)->setDefaultLanguage($localeCode);
 
         $newSystemLocale = $this->getCurrentSystemLocale();
-        static::assertSame('en-US', $newSystemLocale['code']);
+        static::assertSame($localeCode, $newSystemLocale['code']);
 
         $snippetsAfter = $this->snippetRepository->search(new Criteria(), $this->context)->getEntities();
         static::assertCount(4, $snippetsAfter);
-        self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appOne->getId(), $previousSystemLocale['id']);
-        self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appThree->getId(), $previousSystemLocale['id']);
-        self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appOne->getId(), $newSystemLocale['id']);
-        self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appThree->getId(), $newSystemLocale['id']);
+        self::assertSnippetExistsForAppAndLocale($snippetsAfter, $appOne->getId(), $previousSystemLocale['id']);
+        self::assertSnippetExistsForAppAndLocale($snippetsAfter, $appThree->getId(), $previousSystemLocale['id']);
+        self::assertSnippetExistsForAppAndLocale($snippetsAfter, $appOne->getId(), $newSystemLocale['id']);
+        self::assertSnippetExistsForAppAndLocale($snippetsAfter, $appThree->getId(), $newSystemLocale['id']);
     }
 
     public function testCreatesSnippetAfterSystemLanguageChangedToDeDe(): void
@@ -97,14 +95,22 @@ class SystemLanguageChangedSubscriberTest extends TestCase
         $this->getContainer()->get(ShopConfigurator::class)->setDefaultLanguage('de-DE');
 
         $newSystemLocale = $this->getCurrentSystemLocale();
-        static::assertSame('en-US', $newSystemLocale['code']);
+        static::assertSame('de-DE', $newSystemLocale['code']);
 
         $snippetsAfter = $this->snippetRepository->search(new Criteria(), $this->context)->getEntities();
         static::assertCount(4, $snippetsAfter);
-        self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appOne->getId(), $previousSystemLocale['id']);
-        self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appThree->getId(), $previousSystemLocale['id']);
-        self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appOne->getId(), $newSystemLocale['id']);
-        self::assertSnippetExistsForAppAndLocale($snippetsBefore, $appThree->getId(), $newSystemLocale['id']);
+        self::assertSnippetExistsForAppAndLocale($snippetsAfter, $appOne->getId(), $previousSystemLocale['id']);
+        self::assertSnippetExistsForAppAndLocale($snippetsAfter, $appThree->getId(), $previousSystemLocale['id']);
+        self::assertSnippetExistsForAppAndLocale($snippetsAfter, $appOne->getId(), $newSystemLocale['id']);
+        self::assertSnippetExistsForAppAndLocale($snippetsAfter, $appThree->getId(), $newSystemLocale['id']);
+    }
+
+    public static function localeCodes(): \Generator
+    {
+        yield ['en-US'];
+        yield ['it-IT'];
+        yield ['es-ES'];
+        yield ['fr-FR'];
     }
 
     /**
