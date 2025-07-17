@@ -16,6 +16,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
 use Shopware\Core\System\CustomField\CustomFieldTypes;
+use Shopware\Core\System\Language\LanguageLoaderInterface;
 use Shopware\Core\System\Language\SalesChannelLanguageLoader;
 use Shopware\Core\Test\Stub\DataAbstractionLayer\StaticDefinitionInstanceRegistry;
 use Shopware\Core\Test\Stub\Framework\IdsCollection;
@@ -140,7 +141,8 @@ class ElasticsearchProductDefinitionTest extends TestCase
             $fieldMapper,
             $salesChannelLanguageLoader,
             false,
-            'dev'
+            'dev',
+            $this->createMock(LanguageLoaderInterface::class)
         );
 
         $expectedMapping = [
@@ -391,7 +393,8 @@ class ElasticsearchProductDefinitionTest extends TestCase
             $fieldMapper,
             $salesChannelLoader,
             false,
-            'dev'
+            'dev',
+            $this->createMock(LanguageLoaderInterface::class)
         );
 
         $mapping = $definition->getMapping(Context::createDefaultContext());
@@ -485,7 +488,8 @@ class ElasticsearchProductDefinitionTest extends TestCase
             $this->createMock(ElasticsearchFieldMapper::class),
             $this->createMock(SalesChannelLanguageLoader::class),
             false,
-            'dev'
+            'dev',
+            $this->createMock(LanguageLoaderInterface::class)
         );
 
         static::assertSame($definition, $esDefinition->getEntityDefinition());
@@ -516,7 +520,8 @@ class ElasticsearchProductDefinitionTest extends TestCase
             $fieldMapper,
             $this->createMock(SalesChannelLanguageLoader::class),
             false,
-            'dev'
+            'dev',
+            $this->createMock(LanguageLoaderInterface::class)
         );
 
         $criteria = new Criteria();
@@ -553,7 +558,8 @@ class ElasticsearchProductDefinitionTest extends TestCase
             $this->createMock(ElasticsearchFieldMapper::class),
             $salesChannelLanguageLoader,
             false,
-            'dev'
+            'dev',
+            $this->createMock(LanguageLoaderInterface::class)
         );
 
         $uuid = $this->ids->get('product-1');
@@ -692,7 +698,8 @@ class ElasticsearchProductDefinitionTest extends TestCase
             $fieldMapper,
             $salesChannelLanguageLoader,
             false,
-            'dev'
+            'dev',
+            $this->createMock(LanguageLoaderInterface::class)
         );
 
         $uuid = $this->ids->get('product-1');
