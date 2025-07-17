@@ -53,19 +53,18 @@ readonly class SystemLanguageChangedSubscriber implements EventSubscriberInterfa
         $newLocale = $this->getLocale($event->newLocaleCode, $context);
 
         foreach ($appsWithSnippets as $appId) {
-            $snippetToClone = $snippets->filter(fn (AppAdministrationSnippetEntity $snippet) => $appId === $snippet->getAppId() && $snippet->getLocaleId() === $newLocale->getId())->first();
+            $snippetToClone = $this->snippetToClone($snippets, $appId, $previousLocale, $newLocale);
             if (!$snippetToClone) {
                 continue;
             }
 
-            $snippetWithPreviousLocaleExists = $snippets->filter(fn (AppAdministrationSnippetEntity $snippet) => $appId === $snippet->getAppId() && $snippet->getLocaleId() === $previousLocale->getId())->first();
-            if ($snippetWithPreviousLocaleExists) {
+            if (!$this->shouldCloneSnippet($snippets, $appId, $previousLocale, $newLocale)) {
                 continue;
             }
 
             $this->snippetRepository->create([[
                 'appId' => $snippetToClone->getAppId(),
-                'localeId' => $previousLocale->getId(),
+                'localeId' => $this->localeToCloneTo($previousLocale, $newLocale)->getId(),
                 'value' => $snippetToClone->getValue(),
             ]], $context);
         }
@@ -87,5 +86,46 @@ readonly class SystemLanguageChangedSubscriber implements EventSubscriberInterfa
     private function getSnippets(Context $context): AppAdministrationSnippetCollection
     {
         return $this->snippetRepository->search(new Criteria(), $context)->getEntities();
+    }
+
+    private function snippetToClone(
+        AppAdministrationSnippetCollection $snippets,
+        string $appId,
+        LocaleEntity $previousLocale,
+        LocaleEntity $newLocale
+    ): ?AppAdministrationSnippetEntity {
+        $localeIdToMatch = $newLocale->getId();
+
+        if ($previousLocale->getCode() === 'en-GB' && $newLocale->getCode() === 'de-DE') {
+            $localeIdToMatch = $previousLocale->getId();
+        }
+
+        return $snippets->filter(function (AppAdministrationSnippetEntity $snippet) use ($appId, $localeIdToMatch) {
+            return $appId === $snippet->getAppId() && $snippet->getLocaleId() === $localeIdToMatch;
+        })->first();
+    }
+
+    private function shouldCloneSnippet(
+        AppAdministrationSnippetCollection $snippets,
+        string $appId,
+        LocaleEntity $previousLocale,
+        LocaleEntity $newLocale
+    ): bool {
+        if ($previousLocale->getCode() === 'en-GB' && $newLocale->getCode() === 'de-DE') {
+            return true;
+        }
+
+        return $snippets->filter(function (AppAdministrationSnippetEntity $snippet) use ($appId, $previousLocale) {
+            return $appId === $snippet->getAppId() && $snippet->getLocaleId() === $previousLocale->getId();
+        })->first() === null;
+    }
+
+    private function localeToCloneTo(LocaleEntity $previousLocale, LocaleEntity $newLocale): LocaleEntity
+    {
+        if ($previousLocale->getCode() === 'en-GB' && $newLocale->getCode() === 'de-DE') {
+            return $newLocale;
+        }
+
+        return $previousLocale;
     }
 }

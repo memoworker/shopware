@@ -3,11 +3,13 @@
 namespace Shopware\Tests\Unit\Administration\Framework\App\Subscriber;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopware\Administration\Framework\App\Subscriber\SystemLanguageChangedSubscriber;
 use Shopware\Administration\Snippet\AppAdministrationSnippetCollection;
 use Shopware\Administration\Snippet\AppAdministrationSnippetEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Maintenance\System\Service\SystemLanguageChangeEvent;
 use Shopware\Core\System\Locale\LocaleCollection;
 use Shopware\Core\System\Locale\LocaleEntity;
@@ -19,33 +21,6 @@ use Shopware\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 #[CoversClass(SystemLanguageChangedSubscriber::class)]
 class SystemLanguageChangedSubscriberTest extends TestCase
 {
-    private LocaleEntity $previousLocale;
-
-    private LocaleEntity $newLocale;
-
-    /**
-     * @var StaticEntityRepository<LocaleCollection>
-     */
-    private StaticEntityRepository $localeRepository;
-
-    protected function setUp(): void
-    {
-        $this->previousLocale = (new LocaleEntity())->assign([
-            'id' => 'previous-locale-id',
-            'code' => 'en-GB',
-        ]);
-
-        $this->newLocale = (new LocaleEntity())->assign([
-            'id' => 'new-locale-id',
-            'code' => 'de-DE',
-        ]);
-
-        $this->localeRepository = new StaticEntityRepository([
-            new LocaleCollection([$this->previousLocale]),
-            new LocaleCollection([$this->newLocale]),
-        ]);
-    }
-
     public function testSubscribedEvents(): void
     {
         static::assertSame(
@@ -69,63 +44,104 @@ class SystemLanguageChangedSubscriberTest extends TestCase
 
         $subscriber->onSystemLanguageChanged(new SystemLanguageChangeEvent(
             'previous-language-id',
-            'previous-locale-code',
-            'new-locale-code'
+            'en-GB',
+            'de-DE',
         ));
     }
 
     public function testDoesNotCreateSnippetsIfSnippetsForPreviousLocaleAlreadyExist(): void
     {
+        /** @var StaticEntityRepository<LocaleCollection> $localeRepository */
+        $localeRepository = new StaticEntityRepository([
+            new LocaleCollection([$previousLocale = $this->createLocale('en-GB')]),
+            new LocaleCollection([$newLocale = $this->createLocale('en-US')]),
+        ]);
+
         /** @var StaticEntityRepository<AppAdministrationSnippetCollection> $snippetRepository */
         $snippetRepository = new StaticEntityRepository([new AppAdministrationSnippetCollection([
-            (new AppAdministrationSnippetEntity())->assign(['id' => 'id', 'appId' => 'app-id', 'localeId' => $this->previousLocale->getId(), 'name' => 'snippet-name', 'value' => 'snippet-value']),
+            $this->createSnippet('app-id', $previousLocale->getId()),
+            $this->createSnippet('app-id', $newLocale->getId()),
         ])]);
 
         $subscriber = new SystemLanguageChangedSubscriber(
-            $this->localeRepository,
+            $localeRepository,
             $snippetRepository
         );
 
         $subscriber->onSystemLanguageChanged(new SystemLanguageChangeEvent(
             'previous-language-id',
-            'previous-locale-code',
-            'new-locale-code'
+            $previousLocale->getCode(),
+            $newLocale->getCode(),
         ));
 
         static::assertCount(0, $snippetRepository->creates);
     }
 
-    public function testCreatesSnippetsIfSnippetsForPreviousLocaleDoNotAlreadyExist(): void
+    #[DataProvider('localeCodes')]
+    public function testCreatesSnippetsIfSnippetsForPreviousLocaleDoNotAlreadyExist(string $locale): void
     {
+        /** @var StaticEntityRepository<LocaleCollection> $localeRepository */
+        $localeRepository = new StaticEntityRepository([
+            new LocaleCollection([$previousLocale = $this->createLocale('en-GB')]),
+            new LocaleCollection([$newLocale = $this->createLocale($locale)]),
+        ]);
+
         /** @var StaticEntityRepository<AppAdministrationSnippetCollection> $snippetRepository */
         $snippetRepository = new StaticEntityRepository([new AppAdministrationSnippetCollection([
-            $snippetOneToClone = (new AppAdministrationSnippetEntity())->assign(['id' => 'snippet-one-id', 'appId' => 'app-one-id', 'localeId' => $this->newLocale->getId(), 'name' => 'snippet-name', 'value' => 'snippet-value']),
-            (new AppAdministrationSnippetEntity())->assign(['id' => 'snippet-two-id', 'appId' => 'app-one-id', 'localeId' => 'other-locale-id', 'name' => 'snippet-name', 'value' => 'snippet-value']),
-            $snippetTwoToClone = (new AppAdministrationSnippetEntity())->assign(['id' => 'snippet-three-id', 'appId' => 'app-two-id', 'localeId' => $this->newLocale->getId(), 'name' => 'snippet-name', 'value' => 'snippet-value']),
-            (new AppAdministrationSnippetEntity())->assign(['id' => 'snippet-four-id', 'appId' => 'app-two-id', 'localeId' => 'other-locale-id', 'name' => 'snippet-name', 'value' => 'snippet-value']),
+            $snippetOneToClone = $this->createSnippet('app-one-id', $newLocale->getId()),
+            $this->createSnippet('app-one-id', 'other-locale-id'),
+            $snippetTwoToClone = $this->createSnippet('app-two-id', $newLocale->getId()),
+            $this->createSnippet('app-two-id', 'other-locale-id'),
         ])]);
 
         $subscriber = new SystemLanguageChangedSubscriber(
-            $this->localeRepository,
+            $localeRepository,
             $snippetRepository
         );
 
         $subscriber->onSystemLanguageChanged(new SystemLanguageChangeEvent(
             'previous-language-id',
-            'previous-locale-code',
-            'new-locale-code'
+            $previousLocale->getCode(),
+            $newLocale->getCode(),
         ));
 
         static::assertSame([
             'appId' => $snippetOneToClone->getAppId(),
-            'localeId' => $this->previousLocale->getId(),
+            'localeId' => $previousLocale->getId(),
             'value' => $snippetOneToClone->getValue(),
         ], $snippetRepository->creates[0][0]);
 
         static::assertSame([
             'appId' => $snippetTwoToClone->getAppId(),
-            'localeId' => $this->previousLocale->getId(),
+            'localeId' => $previousLocale->getId(),
             'value' => $snippetTwoToClone->getValue(),
         ], $snippetRepository->creates[1][0]);
+    }
+
+    public static function localeCodes(): \Generator
+    {
+        yield ['en-US'];
+        yield ['it-IT'];
+        yield ['es-ES'];
+        yield ['fr-FR'];
+    }
+
+    private function createLocale(string $code): LocaleEntity
+    {
+        return (new LocaleEntity())->assign([
+            'id' => Uuid::randomHex(),
+            'code' => $code,
+        ]);
+    }
+
+    private function createSnippet(string $appId, string $localeId): AppAdministrationSnippetEntity
+    {
+        return (new AppAdministrationSnippetEntity())->assign([
+            'id' => Uuid::randomHex(),
+            'appId' => $appId,
+            'localeId' => $localeId,
+            'name' => 'snippet-name',
+            'value' => 'snippet-value',
+        ]);
     }
 }
