@@ -43,8 +43,11 @@ export default function createSearchRankingService() {
     const cacheModules = {};
     let cacheUserSearchConfiguration;
     let cacheDefaultUserSearchPreference;
+    let minSearchTermLength = 1;
 
     loginService.addOnLoginListener(clearCacheUserSearchConfiguration);
+
+    _loadMinSearchTermLength();
 
     return {
         getSearchFieldsByEntity,
@@ -53,6 +56,8 @@ export default function createSearchRankingService() {
         buildGlobalSearchQueries,
         clearCacheUserSearchConfiguration,
         searchRankingPoint,
+        getMinSearchTermLength,
+        isValidTerm,
     };
 
     /**
@@ -158,6 +163,28 @@ export default function createSearchRankingService() {
         return _scoring(userConfigSearchFieldsByEntity, entityName);
     }
 
+    /**
+     * @returns {Promise<number>}
+     */
+    async function getMinSearchTermLength() {
+        const systemConfigApiService = Service('systemConfigApiService');
+
+        try {
+            const response = await systemConfigApiService.getValues('core.search');
+            return response['core.search.minSearchTermLength'] ?? 1;
+        } catch (error) {
+            return error;
+        }
+    }
+
+    /**
+     * @param {String} searchTerm
+     * @returns {Boolean}
+     */
+    function isValidTerm(searchTerm) {
+        return _isValidTerm(searchTerm);
+    }
+
     function clearCacheUserSearchConfiguration() {
         cacheUserSearchConfiguration = undefined;
     }
@@ -204,7 +231,21 @@ export default function createSearchRankingService() {
      * @returns {Boolean}
      */
     function _isValidTerm(searchTerm) {
-        return searchTerm && searchTerm.trim().length > 1;
+        return searchTerm && searchTerm.trim().length >= minSearchTermLength;
+    }
+
+    /**
+     * @private
+     * Load the minimum search term length from system configuration
+     */
+    function _loadMinSearchTermLength() {
+        getMinSearchTermLength()
+            .then((response) => {
+                minSearchTermLength = response;
+            })
+            .catch(() => {
+                minSearchTermLength = 1;
+            });
     }
 
     /**
@@ -257,7 +298,7 @@ export default function createSearchRankingService() {
      */
     function _buildQueryScores(fieldScores, searchTerm) {
         let terms = searchTerm.split(' ').filter((term) => {
-            return term.length > 1;
+            return term.length >= minSearchTermLength;
         });
         terms = [...new Set(terms)];
 

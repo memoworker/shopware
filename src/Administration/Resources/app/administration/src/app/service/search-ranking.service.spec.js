@@ -20,6 +20,12 @@ Shopware.Service().register('loginService', () => {
     };
 });
 
+Shopware.Service().register('systemConfigApiService', () => {
+    return {
+        getValues: () => Promise.resolve(3),
+    };
+});
+
 describe('app/service/search-ranking.service.js', () => {
     const entity = 'product';
     const defaultModule = {
@@ -633,5 +639,92 @@ describe('app/service/search-ranking.service.js', () => {
         actual = await newService.getSearchFieldsByEntity('product');
         // expect to get different result
         expect(actual).toEqual({});
+    });
+
+    describe('getMinSearchTermLength', () => {
+        it('should return the configured minimum search term length from system config', async () => {
+            const service = new SearchRankingService();
+
+            const result = await service.getMinSearchTermLength();
+
+            expect(result).toBe(3);
+        });
+
+        it('should handle errors and return error object', async () => {
+            // Mock the service to throw an error
+            Shopware.Service('systemConfigApiService').getValues = () => Promise.reject(new Error('Config error'));
+
+            const service = new SearchRankingService();
+
+            const result = await service.getMinSearchTermLength();
+
+            expect(result).toBeInstanceOf(Error);
+            expect(result.message).toBe('Config error');
+        });
+    });
+
+    describe('isValidTerm', () => {
+        it('should return true for valid search terms', () => {
+            const service = new SearchRankingService();
+
+            expect(service.isValidTerm('test')).toBe(true);
+            expect(service.isValidTerm('  test  ')).toBe(true);
+            expect(service.isValidTerm('longer search term')).toBe(true);
+        });
+
+        it('should initialize with default minimum search term length', () => {
+            const service = new SearchRankingService();
+
+            // Should use default value (1) initially
+            expect(service.isValidTerm('a')).toBe(true);
+            expect(service.isValidTerm('')).toBe(false);
+        });
+
+        it('should return false for invalid search terms', () => {
+            const service = new SearchRankingService();
+
+            expect(service.isValidTerm('')).toBe(false);
+            expect(service.isValidTerm(' ')).toBe(false);
+            expect(service.isValidTerm('  ')).toBe(false);
+            expect(service.isValidTerm(null)).toBe(false);
+            expect(service.isValidTerm(undefined)).toBe(false);
+        });
+
+                it('should respect the minimum search term length configuration', async () => {
+            // Mock the service to return a higher minimum length
+            Shopware.Service('systemConfigApiService').getValues = () => Promise.resolve(5);
+
+            const service = new SearchRankingService();
+
+            // Wait for the initialization to complete
+            await service.getMinSearchTermLength();
+
+            expect(service.isValidTerm('test')).toBe(false); // 4 characters < 5
+            expect(service.isValidTerm('testing')).toBe(true); // 7 characters >= 5
+            expect(service.isValidTerm('  test  ')).toBe(false); // 4 characters after trim < 5
+        });
+
+        it('should filter terms based on minimum length in buildSearchQueriesForEntity', async () => {
+            // Mock the service to return a higher minimum length
+            Shopware.Service('systemConfigApiService').getValues = () => Promise.resolve(4);
+
+            const service = new SearchRankingService();
+
+            // Wait for the initialization to complete
+            await service.getMinSearchTermLength();
+
+            const searchFields = {
+                'product.name': searchRankingPoint.HIGH_SEARCH_RANKING,
+            };
+
+            const criteria = service.buildSearchQueriesForEntity(
+                searchFields,
+                'abc def ghi', // abc(3) < 4, def(3) < 4, ghi(3) < 4
+                new Criteria(1, 25)
+            );
+
+            // Since all terms are shorter than minimum length, no queries should be added
+            expect(criteria.parse().query).toBeUndefined();
+        });
     });
 });
